@@ -1,11 +1,15 @@
 server:
-  port: 8099
+  port: 8080
 spring:
   application:
     name: ecom-api-gateway
   main:
     web-application-type: reactive
-
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: http://localhost:8081/oauth2/jwks
   cloud:
     gateway:
       routes:
@@ -38,5 +42,5 @@ eureka:
       defaultZone: "http://localhost:8088/eureka/"
 logging:
   level:
-    root: TRACE
+    root: DEBUG
 
