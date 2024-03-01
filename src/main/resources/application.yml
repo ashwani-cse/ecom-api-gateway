@@ -1,5 +1,5 @@
 server:
-  port: 8080
+  port: ${PORT:8080}
 spring:
   application:
     name: ecom-api-gateway
@@ -9,7 +9,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          jwk-set-uri: http://localhost:8081/oauth2/jwks
+          jwk-set-uri: ${TOKEN_ISSUER:http://localhost:8081/oauth2/jwks}
   cloud:
     gateway:
       routes:
@@ -24,10 +24,10 @@ spring:
 #                redis-rate-limiter.replenishRate: 1
 #                redis-rate-limiter.burstCapacity: 2
 #                redis-rate-limiter.requestedTokens: 1
-#        - id: user-management-service
-#          uri: lb://user-management-service
-#          predicates:
-#            - Path=/user/**
+        - id: user-management-service
+          uri: lb://USER-MANAGEMENT-SERVICE
+          predicates:
+            - Path=/api/v1/users/**
 #          filters:
 #            - name: RequestRateLimiter
 #              args:
@@ -42,5 +42,12 @@ eureka:
       defaultZone: "http://localhost:8088/eureka/"
 logging:
   level:
-    root: DEBUG
+    org:
+      springframework:
+        security: trace
+        web: trace
+    root: info
+  pattern:
+    level: "%5p [ecom-api-gateway] %d{HH:mm:ss.SSS} [%t] %c.class{%L} - %m%n"
+
 
