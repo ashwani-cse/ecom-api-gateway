@@ -1,5 +1,6 @@
 package com.gateway.api.security;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -17,36 +18,44 @@ import static org.springframework.security.oauth2.core.authorization.OAuth2React
 @EnableWebFluxSecurity
 public class SecurityConfig {
 
+    @Value("${oauth2.token-issuer}")
+    private String TOKEN_ISSUER;
+
     @Bean
     public SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) {
         http
                 .authorizeExchange(exchanges -> exchanges
                         .pathMatchers("/api/v1/users/signup").permitAll() // here scope_ is not the prefix, its the claim name in jwt token
                         .pathMatchers("/api/v1/products/**").access(hasScope("scope_view_products")) // we have used profile scope in jwt token so validating it here
-                // as of now ,   we are using scopes in jwt token so we are validating it her
-                // roles not working wil debug later
-                  /*
-                        .pathMatchers("/api/v1/products/**").hasAuthority("SCOPE_ADMIN") // Neither this is working
-                        .pathMatchers("/api/v1/products/**").hasRole("SCOPE_ADMIN")     // Nor this is working
-                    */
+                        // as of now ,   we are using scopes in jwt token so we are validating it her
+                        // roles not working wil debug later
+
+                        /* .pathMatchers("/api/v1/products/**").hasAuthority("ROLE_ADMIN") // Neither this is working
+                           .pathMatchers("/api/v1/products/**").hasRole("SCOPE_ADMIN")     // Nor this is working
+                     */
                         .anyExchange().authenticated()
                 )
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
-                .oauth2ResourceServer((resourceServer) ->
-                        resourceServer.jwt(withDefaults())
+                /* .oauth2ResourceServer((resourceServerSpec) ->
+                         resourceServerSpec.jwt(withDefaults())
+                 )*/
+                .oauth2ResourceServer(oauth2 -> oauth2
+                        .jwt(jwt -> jwt
+                                .jwkSetUri(TOKEN_ISSUER)
+                        )
                 );
         return http.build();
     }
 
     /**
      * In above case, we are using scopes in jwt token for authorization , but usually we use roles for authorization.
-     *  So if we want to use roles for authorization, we need to convert the roles from jwt token to authorities.
-     *  This is we are setting at auhserver in jwtTokenCustomizer() method.
+     * So if we want to use roles for authorization, we need to convert the roles from jwt token to authorities.
+     * This is we are setting at auhserver in jwtTokenCustomizer() method.
      */
-   // @Bean  // disabling for now because roles not working, will debug later this flow
+    // @Bean  // disabling for now because roles not working, will debug later this flow
     public JwtAuthenticationConverter jwtAuthenticationConverter() {
         JwtGrantedAuthoritiesConverter grantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
-      //  grantedAuthoritiesConverter.setAuthoritiesClaimName("authorities"); // default is "authorities" if not set in jwt token claim name
+        //  grantedAuthoritiesConverter.setAuthoritiesClaimName("authorities"); // default is "authorities" if not set in jwt token claim name
         grantedAuthoritiesConverter.setAuthoritiesClaimName("roles"); // we have used roles in jwt token claim name so setting it here
         grantedAuthoritiesConverter.setAuthorityPrefix("ROLE_"); // default is "SCOPE_" if not set in jwt token claim name so changing it to "ROLE_"
 
